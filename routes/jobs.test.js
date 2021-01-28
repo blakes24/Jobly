@@ -92,7 +92,7 @@ describe('GET /jobs', function() {
 					title         : 'Job 2',
 					salary        : 70000,
 					equity        : '0',
-					companyHandle : 'c2'
+					companyHandle : 'c3'
 				},
 				{
 					id            : expect.any(Number),
@@ -114,7 +114,7 @@ describe('GET /jobs', function() {
 					title         : 'Job 2',
 					salary        : 70000,
 					equity        : '0',
-					companyHandle : 'c2'
+					companyHandle : 'c3'
 				},
 				{
 					id            : expect.any(Number),
