@@ -1,4 +1,4 @@
-const { sqlForPartialUpdate, sqlForFilter } = require('./sql');
+const { sqlForPartialUpdate, sqlForCompFilter, sqlForJobFilter } = require('./sql');
 
 describe('sqlForPartialUpdate', function() {
 	test('works with valid data', function() {
@@ -21,19 +21,19 @@ describe('sqlForPartialUpdate', function() {
 	});
 });
 
-describe('sqlForFilter', function() {
-	test('works with valid data', function() {
-		const filterParams = { name: 'net', minEmployees: 100 };
-		const res = sqlForFilter(filterParams);
+describe('sqlForCompFilter', function() {
+	test('works with all filters', function() {
+		const filters = { name: 'net', minEmployees: 100, maxEmployees: 200 };
+		const res = sqlForCompFilter(filters);
 		expect(res).toEqual({
-			whereCols : "name ILIKE '%' || $1 || '%' AND num_employees >= $2",
-			values    : [ 'net', 100 ]
+			whereCols : "name ILIKE '%' || $1 || '%' AND num_employees >= $2 AND num_employees <= $3",
+			values    : [ 'net', 100, 200 ]
 		});
 	});
 
-	test('works with just name', function() {
-		const filterParams = { name: 'net' };
-		const res = sqlForFilter(filterParams);
+	test('works with one filter', function() {
+		const filters = { name: 'net' };
+		const res = sqlForCompFilter(filters);
 		expect(res).toEqual({
 			whereCols : "name ILIKE '%' || $1 || '%'",
 			values    : [ 'net' ]
@@ -42,19 +42,45 @@ describe('sqlForFilter', function() {
 
 	test('throws error if minEmployees exceeds maxEmployees', function() {
 		expect(() => {
-			sqlForFilter({ minEmployees: 100, maxEmployees: 50 });
+			sqlForCompFilter({ minEmployees: 100, maxEmployees: 50 });
 		}).toThrowError('minEmployees cannot exceed maxEmployees');
 	});
 
 	test('throws error if minEmployees is not a number', function() {
 		expect(() => {
-			sqlForFilter({ minEmployees: 'cat', maxEmployees: 50 });
+			sqlForCompFilter({ minEmployees: 'cat', maxEmployees: 50 });
 		}).toThrowError('minEmployees/maxEmployees must be a number');
 	});
 
 	test('throws error if maxEmployees is not a number', function() {
 		expect(() => {
-			sqlForFilter({ minEmployees: 100, maxEmployees: 'dog' });
+			sqlForCompFilter({ minEmployees: 100, maxEmployees: 'dog' });
 		}).toThrowError('minEmployees/maxEmployees must be a number');
+	});
+});
+
+describe('sqlForJobFilter', function() {
+	test('works with all filters', function() {
+		const filters = { title: 'law', minSalary: 90000, hasEquity: 'true' };
+		const res = sqlForJobFilter(filters);
+		expect(res).toEqual({
+			whereCols : "title ILIKE '%' || $1 || '%' AND salary >= $2 AND equity IS NOT NULL AND equity > 0",
+			values    : [ 'law', 90000 ]
+		});
+	});
+
+	test('works with one filter', function() {
+		const filters = { title: 'law' };
+		const res = sqlForJobFilter(filters);
+		expect(res).toEqual({
+			whereCols : "title ILIKE '%' || $1 || '%'",
+			values    : [ 'law' ]
+		});
+	});
+
+	test('throws error if minSalary is not a number', function() {
+		expect(() => {
+			sqlForJobFilter({ minSalary: 'cat' });
+		}).toThrowError('minSalary must be a number');
 	});
 });
