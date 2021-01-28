@@ -5,7 +5,14 @@ const request = require('supertest');
 const db = require('../db');
 const app = require('../app');
 
-const { commonBeforeAll, commonBeforeEach, commonAfterEach, commonAfterAll, u1Token } = require('./_testCommon');
+const {
+	commonBeforeAll,
+	commonBeforeEach,
+	commonAfterEach,
+	commonAfterAll,
+	u1Token,
+	u2Token
+} = require('./_testCommon');
 
 beforeAll(commonBeforeAll);
 beforeEach(commonBeforeEach);
@@ -23,7 +30,7 @@ describe('POST /companies', function() {
 		numEmployees : 10
 	};
 
-	test('ok for users', async function() {
+	test('ok for admin', async function() {
 		const resp = await request(app).post('/companies').send(newCompany).set('authorization', `Bearer ${u1Token}`);
 		expect(resp.statusCode).toEqual(201);
 		expect(resp.body).toEqual({
@@ -51,6 +58,11 @@ describe('POST /companies', function() {
 			})
 			.set('authorization', `Bearer ${u1Token}`);
 		expect(resp.statusCode).toEqual(400);
+	});
+
+	test('unauth if not admin', async function() {
+		const resp = await request(app).post('/companies').send(newCompany).set('authorization', `Bearer ${u2Token}`);
+		expect(resp.statusCode).toEqual(401);
 	});
 });
 
@@ -165,7 +177,7 @@ describe('GET /companies/:handle', function() {
 /************************************** PATCH /companies/:handle */
 
 describe('PATCH /companies/:handle', function() {
-	test('works for users', async function() {
+	test('works for admin', async function() {
 		const resp = await request(app)
 			.patch(`/companies/c1`)
 			.send({
@@ -187,6 +199,16 @@ describe('PATCH /companies/:handle', function() {
 		const resp = await request(app).patch(`/companies/c1`).send({
 			name : 'C1-new'
 		});
+		expect(resp.statusCode).toEqual(401);
+	});
+
+	test('unauth for non-amin user', async function() {
+		const resp = await request(app)
+			.patch(`/companies/c1`)
+			.send({
+				name : 'C1-new'
+			})
+			.set('authorization', `Bearer ${u2Token}`);
 		expect(resp.statusCode).toEqual(401);
 	});
 
@@ -224,13 +246,17 @@ describe('PATCH /companies/:handle', function() {
 /************************************** DELETE /companies/:handle */
 
 describe('DELETE /companies/:handle', function() {
-	test('works for users', async function() {
+	test('works for admin', async function() {
 		const resp = await request(app).delete(`/companies/c1`).set('authorization', `Bearer ${u1Token}`);
 		expect(resp.body).toEqual({ deleted: 'c1' });
 	});
 
 	test('unauth for anon', async function() {
 		const resp = await request(app).delete(`/companies/c1`);
+		expect(resp.statusCode).toEqual(401);
+	});
+	test('unauth for non-admin user', async function() {
+		const resp = await request(app).delete(`/companies/c1`).set('authorization', `Bearer ${u2Token}`);
 		expect(resp.statusCode).toEqual(401);
 	});
 
