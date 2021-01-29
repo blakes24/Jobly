@@ -128,7 +128,7 @@ describe('findFiltered', function() {
 	});
 
 	test('works with all filters', async function() {
-		let jobs = await Job.findFiltered({ hasEquity: 'true', title: 'j', minSalary: 60000 });
+		let jobs = await Job.findFiltered({ hasEquity: 'false', title: 'j', minSalary: 80000 });
 		expect(jobs).toEqual([
 			{
 				id            : expect.any(Number),

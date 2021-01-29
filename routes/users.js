@@ -60,7 +60,8 @@ router.get('/', ensureAdmin, async function(req, res, next) {
 
 /** GET /[username] => { user }
  *
- * Returns { username, firstName, lastName, isAdmin }
+ * Returns { username, firstName, lastName, isAdmin, jobs }
+ *  where jobs is an array of jobIds to which the user has applied
  *
  * Authorization required: admin or user getting their own info
  **/
@@ -69,6 +70,22 @@ router.get('/:username', [ ensureLoggedIn, ensureUserOrAdmin ], async function(r
 	try {
 		const user = await User.get(req.params.username);
 		return res.json({ user });
+	} catch (err) {
+		return next(err);
+	}
+});
+
+/** POST /[username]/jobs/[id] => { applied: jobId }
+ *
+ * Returns { applied: jobId }
+ *
+ * Authorization required: admin or user for their own application
+ **/
+
+router.post('/:username/jobs/:id', [ ensureLoggedIn, ensureUserOrAdmin ], async function(req, res, next) {
+	try {
+		const result = await User.apply(req.params.username, req.params.id);
+		return res.json({ applied: result.jobId });
 	} catch (err) {
 		return next(err);
 	}
