@@ -5,7 +5,7 @@
 const jsonschema = require('jsonschema');
 
 const express = require('express');
-const { ensureLoggedIn, ensureAdmin, ensureUserOrAdmin } = require('../middleware/auth');
+const { ensureAdmin, ensureUserOrAdmin } = require('../middleware/auth');
 const { BadRequestError } = require('../expressError');
 const User = require('../models/user');
 const { createToken } = require('../helpers/tokens');
@@ -66,7 +66,7 @@ router.get('/', ensureAdmin, async function(req, res, next) {
  * Authorization required: admin or user getting their own info
  **/
 
-router.get('/:username', [ ensureLoggedIn, ensureUserOrAdmin ], async function(req, res, next) {
+router.get('/:username', ensureUserOrAdmin, async function(req, res, next) {
 	try {
 		const user = await User.get(req.params.username);
 		return res.json({ user });
@@ -82,7 +82,7 @@ router.get('/:username', [ ensureLoggedIn, ensureUserOrAdmin ], async function(r
  * Authorization required: admin or user for their own application
  **/
 
-router.post('/:username/jobs/:id', [ ensureLoggedIn, ensureUserOrAdmin ], async function(req, res, next) {
+router.post('/:username/jobs/:id', ensureUserOrAdmin, async function(req, res, next) {
 	try {
 		const result = await User.apply(req.params.username, req.params.id);
 		return res.json({ applied: result.jobId });
@@ -98,10 +98,10 @@ router.post('/:username/jobs/:id', [ ensureLoggedIn, ensureUserOrAdmin ], async 
  *
  * Returns { username, firstName, lastName, email, isAdmin }
  *
- * Authorization required: login
+ * Authorization required: admin or user changing their own info
  **/
 
-router.patch('/:username', [ ensureLoggedIn, ensureUserOrAdmin ], async function(req, res, next) {
+router.patch('/:username', ensureUserOrAdmin, async function(req, res, next) {
 	try {
 		const validator = jsonschema.validate(req.body, userUpdateSchema);
 		if (!validator.valid) {
@@ -118,10 +118,10 @@ router.patch('/:username', [ ensureLoggedIn, ensureUserOrAdmin ], async function
 
 /** DELETE /[username]  =>  { deleted: username }
  *
- * Authorization required: login
+ * Authorization required: admin or user deleting their own profile
  **/
 
-router.delete('/:username', [ ensureLoggedIn, ensureUserOrAdmin ], async function(req, res, next) {
+router.delete('/:username', ensureUserOrAdmin, async function(req, res, next) {
 	try {
 		await User.remove(req.params.username);
 		return res.json({ deleted: req.params.username });

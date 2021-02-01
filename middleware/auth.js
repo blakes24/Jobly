@@ -1,10 +1,8 @@
 'use strict';
 
 /** Convenience middleware to handle common auth cases in routes. */
-
-const jwt = require('jsonwebtoken');
-const { SECRET_KEY } = require('../config');
 const { UnauthorizedError } = require('../expressError');
+const { verifyToken } = require('../helpers/tokens');
 
 /** Middleware: Authenticate user.
  *
@@ -19,7 +17,7 @@ function authenticateJWT(req, res, next) {
 		const authHeader = req.headers && req.headers.authorization;
 		if (authHeader) {
 			const token = authHeader.replace(/^[Bb]earer /, '').trim();
-			res.locals.user = jwt.verify(token, SECRET_KEY);
+			res.locals.user = verifyToken(token);
 		}
 		return next();
 	} catch (err) {
@@ -62,12 +60,10 @@ function ensureAdmin(req, res, next) {
 
 function ensureUserOrAdmin(req, res, next) {
 	try {
-		if (res.locals.user.username !== req.params.username) {
-			if (!res.locals.user.isAdmin) {
-				throw new UnauthorizedError();
-			}
+		if (res.locals.user && (res.locals.user.username === req.params.username || res.locals.user.isAdmin)) {
+			return next();
 		}
-		return next();
+		throw new UnauthorizedError();
 	} catch (err) {
 		return next(err);
 	}
